@@ -1,10 +1,13 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
 	"net/http"
 
+	"github.com/ariefmaulidy/security-workshop/encryption"
 	"github.com/ariefmaulidy/security-workshop/messaging"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/nsqio/go-nsq"
 )
 
@@ -53,8 +56,8 @@ func main() {
 
 	// initiate consumer
 	consumer, err := messaging.NewConsumer(messaging.ConsumerConfig{
-		Topic:         "test", // Change the topic
-		Channel:       "test", // Change the channel
+		Topic:         "payment",
+		Channel:       "insert",
 		LookupAddress: "172.18.59.254:4161",
 		MaxAttempts:   defaultConsumerMaxAttempts,
 		MaxInFlight:   defaultConsumerMaxInFlight,
@@ -71,14 +74,53 @@ func main() {
 }
 
 func handlePublish(w http.ResponseWriter, r *http.Request) {
+	var err error
+
+	responseBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Print(err)
+	}
+
+	// make sure data struct is valid
+	var payment Payment
+	err = jsoniter.Unmarshal(responseBody, &payment)
+	if err != nil {
+		log.Print(err)
+	}
+
+	securePayment, err := encryption.EncrpytRSA(encryption.ServiceB, responseBody)
+	if err != nil {
+		log.Print(err)
+	}
+
+	securePayment, err = encryption.EncryptAES(encryption.AESKey, []byte(securePayment))
+	if err != nil {
+		log.Print(err)
+	}
+
 	// Do Publish
-	topic := "" // TODO: update to given topic name
-	msg := ""   // TODO: write your message here
-	producer.Publish(topic, msg)
+	producer.Publish("payment", securePayment)
 }
 
 func handleMessage(message *nsq.Message) error {
+	var err error
+
+	messageData, err := encryption.DecryptAES(encryption.AESKey, string(message.Body))
+	if err != nil {
+		log.Print(err)
+	}
+
+	messageData, err = encryption.DecryptRSA(encryption.ServiceB, string(messageData))
+	if err != nil {
+		log.Print(err)
+	}
+
 	// Handle message NSQ here
+	var payment Payment
+	err = jsoniter.Unmarshal(messageData, &payment)
+	if err != nil {
+		log.Print(err)
+	}
 
 	message.Finish()
 	return nil
