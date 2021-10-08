@@ -31,7 +31,7 @@ func GenerateKey() []byte {
 
 func SetPublicKeyAndPrivateKeyServiceA() error {
 	// Public Key
-	pubKeyRead := strings.NewReader(strings.Trim(PrivateKeyServiceA, "\t"))
+	pubKeyRead := strings.NewReader(strings.Trim(PublicKeyServiceA, "\t"))
 	publicKey, err := ioutil.ReadAll(pubKeyRead)
 	if err != nil {
 		return err

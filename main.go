@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"github.com/ariefmaulidy/security-workshop/encryption"
 	"log"
 	"net/http"
 
@@ -72,12 +74,21 @@ func main() {
 
 func handlePublish(w http.ResponseWriter, r *http.Request) {
 	// Do Publish
-	topic := "" // TODO: update to given topic name
-	msg := ""   // TODO: write your message here
+	topic := "PaymentDone" // TODO: update to given topic name
+	paymentData := Payment{}
+	jsonBytes, _ := json.Marshal(paymentData)
+	encryptedData, _ := encryption.EncrpytRSA(encryption.ServiceB, jsonBytes)                // for secrecy
+	encryptedData, _ = encryption.EncryptAES("ABSOLUTELY_SECRET_KEY", []byte(encryptedData)) // seems better kalo bisa encrypt pake private key? for authenticity
+	msg := encryptedData                                                                     // TODO: write your message here
 	producer.Publish(topic, msg)
 }
 
 func handleMessage(message *nsq.Message) error {
+	decryptedData, _ := encryption.DecryptAES("ABSOLUTELY_SECRET_KEY", string(message.Body))
+	decryptedData, _ = encryption.DecryptRSA(encryption.ServiceB, string(decryptedData))
+	var paymentData Payment
+	_ = json.Unmarshal(decryptedData, &paymentData)
+
 	// Handle message NSQ here
 
 	message.Finish()
