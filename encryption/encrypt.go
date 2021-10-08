@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"fmt"
 	"io"
 )
 
@@ -17,7 +18,7 @@ var (
 )
 
 func EncryptAES(key string, input []byte) (string, error) {
-	keyByte, err := hex.DecodeString(AESKey)
+	keyByte, err := hex.DecodeString(key)
 	if err != nil {
 		return "", err
 	}
@@ -38,6 +39,7 @@ func EncryptAES(key string, input []byte) (string, error) {
 
 	cipherTextByte := gcm.Seal(nonce, nonce, input, nil)
 	cipherText := base64.StdEncoding.EncodeToString(cipherTextByte)
+	fmt.Println(cipherText)
 	return cipherText, nil
 }
 
