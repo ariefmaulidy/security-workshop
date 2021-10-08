@@ -4,7 +4,9 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/ariefmaulidy/security-workshop/encryption"
 	"github.com/ariefmaulidy/security-workshop/messaging"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/nsqio/go-nsq"
 )
 
@@ -53,8 +55,8 @@ func main() {
 
 	// initiate consumer
 	consumer, err := messaging.NewConsumer(messaging.ConsumerConfig{
-		Topic:         "test", // Change the topic
-		Channel:       "test", // Change the channel
+		Topic:         "bgp_tech_cur_test_zahrah", // Change the topic
+		Channel:       "bgp_tech_cur_test_zahrah", // Change the channel
 		LookupAddress: "172.18.59.254:4161",
 		MaxAttempts:   defaultConsumerMaxAttempts,
 		MaxInFlight:   defaultConsumerMaxInFlight,
@@ -67,19 +69,45 @@ func main() {
 	http.HandleFunc("/publish_payment", handlePublish)
 
 	go messaging.RunConsumer(consumer)
-	log.Fatal(http.ListenAndServe(":8090", nil))
+	log.Fatal(http.ListenAndServe(":8191", nil))
 }
 
 func handlePublish(w http.ResponseWriter, r *http.Request) {
 	// Do Publish
-	topic := "" // TODO: update to given topic name
-	msg := ""   // TODO: write your message here
+	topic := "bgp_tech_cur_test_zahrah" // TODO: update to given topic name
+	pymData := Payment{
+		UserData: User{
+			Name: "Zahrah",
+		},
+		ItemData: []Item{
+			{
+				Name:       "Mug 350 ml",
+				Price:      30000,
+				TotalPrice: 30000,
+			},
+		},
+		TotalPayment: 30000,
+	}
+	str, _ := jsoniter.MarshalToString(pymData)
+
+	msg, err := encryption.EncrpytRSA(encryption.ServiceB, []byte(str)) // TODO: write your message here
+	if err != nil {
+		log.Println("Failed to encrypt data")
+	}
+
+	log.Println("Sending data to NSQ")
 	producer.Publish(topic, msg)
 }
 
 func handleMessage(message *nsq.Message) error {
 	// Handle message NSQ here
 
+	log.Println("Incoming payment data")
+	decryptedMsg, err := encryption.DecryptRSA(encryption.ServiceB, string(message.Body))
+	if err != nil {
+		log.Println("Failed to decrypt data")
+	}
+	log.Println(string(decryptedMsg))
 	message.Finish()
 	return nil
 }
