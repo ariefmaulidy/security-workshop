@@ -17,7 +17,7 @@ var (
 )
 
 func EncryptAES(key string, input []byte) (string, error) {
-	keyByte, err := hex.DecodeString(AESKey)
+	keyByte, err := hex.DecodeString(key)
 	if err != nil {
 		return "", err
 	}
