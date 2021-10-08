@@ -53,8 +53,8 @@ func main() {
 
 	// initiate consumer
 	consumer, err := messaging.NewConsumer(messaging.ConsumerConfig{
-		Topic:         "test", // Change the topic
-		Channel:       "test", // Change the channel
+		Topic:         "papapan", // Change the topic
+		Channel:       "papapan", // Change the channel
 		LookupAddress: "172.18.59.254:4161",
 		MaxAttempts:   defaultConsumerMaxAttempts,
 		MaxInFlight:   defaultConsumerMaxInFlight,
@@ -67,18 +67,42 @@ func main() {
 	http.HandleFunc("/publish_payment", handlePublish)
 
 	go messaging.RunConsumer(consumer)
-	log.Fatal(http.ListenAndServe(":8090", nil))
+	log.Fatal(http.ListenAndServe(":8095", nil))
 }
 
 func handlePublish(w http.ResponseWriter, r *http.Request) {
 	// Do Publish
-	topic := "" // TODO: update to given topic name
-	msg := ""   // TODO: write your message here
+
+	// Pseudo code gak ngerti NSQ
+
+	/*
+		Disini kita encrypt data si User + Item + Payment sebelum kirim
+		1.
+		type Param struct {
+			UserParam User
+			ItemParam Item
+			PaymentParam Payment
+		}
+		2. encrypt(param)
+		3. Bawa ke publisher encryptednya biar di tengah jalan aman2 saja
+	*/
+
+	// Gk ngerti NSQ
+	topic := "papapan" // TODO: update to given topic name
+	msg := "tes"       // TODO: write your message here
 	producer.Publish(topic, msg)
 }
 
 func handleMessage(message *nsq.Message) error {
 	// Handle message NSQ here
+
+	// Pseudo code gak ngerti NSQ
+
+	/*
+		Dia disini kan dah dapet data yang di encrypt dari si publisher
+		1. Decrypt kembali datanya si User, Item, Payment
+		2. Lalu olah datanya disini
+	*/
 
 	message.Finish()
 	return nil
